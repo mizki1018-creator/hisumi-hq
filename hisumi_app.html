@@ -980,27 +980,36 @@ let data = {
   incomeMonthly:[], monthlyTarget:0
 };
 
-function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } db.ref('hisumi_data').set(data).catch(e=>console.warn(e));
+function save(){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  db.ref('hisumi_data').set(data).catch(e=>console.warn(e));
+}
 function load(){
   const raw = localStorage.getItem(STORAGE_KEY);
-  if(!raw) return;
-  try{
-    const p = JSON.parse(raw);
-    Object.assign(data, p);
+  if(raw){
+    try{
+      const p = JSON.parse(raw);
+      Object.assign(data, p);
+      ['subHistory','memHistory','schedules','horseNotes','income','challenges','incomeMonthly']
+        .forEach(k=>{ if(!data[k]) data[k]=[]; });
+      if(!data.tasks) data.tasks={};
+      if(!data.monthlyTarget) data.monthlyTarget=0;
+    }catch(e){}
+  }
+  db.ref('hisumi_data').on('value', snapshot=>{
+    const d = snapshot.val();
+    if(!d || Object.keys(d).length === 0) return;
+    Object.assign(data, d);
     ['subHistory','memHistory','schedules','horseNotes','income','challenges','incomeMonthly']
       .forEach(k=>{ if(!data[k]) data[k]=[]; });
     if(!data.tasks) data.tasks={};
     if(!data.monthlyTarget) data.monthlyTarget=0;
-  }catch(e){}
-}db.ref('hisumi_data').on('value', snapshot=>{
-    const d = snapshot.val();
-    if(!d || Object.keys(d).length === 0) return;
-    Object.assign(data, d);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     renderStats(); renderCalendar(); renderPlans(); renderWeek();
     renderGoals(); renderHorseFilter(); renderHorseNotes();
     renderIncomeTab(); renderChallenges();
   });
+}
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
 function toast(msg){
   const el=document.getElementById('toast');
