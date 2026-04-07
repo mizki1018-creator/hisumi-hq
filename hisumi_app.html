@@ -980,7 +980,7 @@ let data = {
   incomeMonthly:[], monthlyTarget:0
 };
 
-function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } db.ref('hisumi_data').set(data).catch(e=>console.warn(e));
 function load(){
   const raw = localStorage.getItem(STORAGE_KEY);
   if(!raw) return;
@@ -992,7 +992,15 @@ function load(){
     if(!data.tasks) data.tasks={};
     if(!data.monthlyTarget) data.monthlyTarget=0;
   }catch(e){}
-}
+}db.ref('hisumi_data').on('value', snapshot=>{
+    const d = snapshot.val();
+    if(!d) return;
+    Object.assign(data, d);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    renderStats(); renderCalendar(); renderPlans(); renderWeek();
+    renderGoals(); renderHorseFilter(); renderHorseNotes();
+    renderIncomeTab(); renderChallenges();
+  });
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
 function toast(msg){
   const el=document.getElementById('toast');
